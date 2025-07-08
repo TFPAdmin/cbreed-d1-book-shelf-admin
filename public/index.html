@@ -14,32 +14,8 @@
       text-align: center;
     }
 
-    .tabs {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      justify-content: center;
-    }
-
-    .tabs button {
-      padding: 0.5rem 1rem;
-      border: none;
-      background-color: #ddd;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    .tabs button.active {
-      background-color: #0077cc;
-      color: white;
-    }
-
-    .tab-content {
+    .tabs, .tab-content, .edit-book-form {
       display: none;
-      background: white;
-      padding: 1rem;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
     .tab-content.active {
@@ -67,119 +43,83 @@
       border-top: 1px solid #ccc;
       padding-top: 1rem;
     }
+
+    #loginBox {
+      max-width: 300px;
+      margin: 100px auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    #dashboard {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <h1>Admin Dashboard</h1>
-
-  <div class="tabs">
-    <button onclick="switchTab('add')" id="tab-add" class="active">Add Book</button>
-    <button onclick="switchTab('view')" id="tab-view">Current Books</button>
+  <div id="loginBox">
+    <h2>Admin Login</h2>
+    <form id="loginForm">
+      <input type="text" name="username" placeholder="Username" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <div id="loginError" style="color:red; display:none;">Invalid login</div>
   </div>
 
-  <div id="add" class="tab-content active">
-    <form id="addBookForm">
-      <input type="text" placeholder="Title" name="title" required />
-      <input type="text" placeholder="Subtitle" name="subtitle" />
-      <textarea placeholder="Excerpt" name="excerpt"></textarea>
-      <input type="url" placeholder="Cover Image URL" name="cover" />
-      <input type="url" placeholder="Wattpad Link" name="wattpad" />
-      <button type="submit">Add Book</button>
-    </form>
-  </div>
+  <div id="dashboard">
+    <h1>Admin Dashboard</h1>
 
-  <div id="view" class="tab-content">
-    <div id="bookList"></div>
+    <div class="tabs">
+      <button onclick="switchTab('add')" id="tab-add" class="active">Add Book</button>
+      <button onclick="switchTab('view')" id="tab-view">Current Books</button>
+    </div>
 
-    <form id="editBookForm" class="edit-book-form" style="display:none;">
-      <h3>Edit Book</h3>
-      <input type="hidden" name="id" />
-      <input type="text" placeholder="Title" name="title" required />
-      <input type="text" placeholder="Subtitle" name="subtitle" />
-      <textarea placeholder="Excerpt" name="excerpt"></textarea>
-      <input type="url" placeholder="Cover Image URL" name="cover" />
-      <input type="url" placeholder="Wattpad Link" name="wattpad" />
-      <button type="submit">Update Book</button>
-    </form>
+    <div id="add" class="tab-content active">
+      <form id="addBookForm">
+        <input type="text" placeholder="Title" name="title" required />
+        <input type="text" placeholder="Subtitle" name="subtitle" />
+        <textarea placeholder="Excerpt" name="excerpt"></textarea>
+        <input type="url" placeholder="Cover Image URL" name="cover" />
+        <input type="url" placeholder="Wattpad Link" name="wattpad" />
+        <button type="submit">Add Book</button>
+      </form>
+    </div>
+
+    <div id="view" class="tab-content">
+      <div id="bookList"></div>
+
+      <form id="editBookForm" class="edit-book-form" style="display:none;">
+        <h3>Edit Book</h3>
+        <input type="hidden" name="id" />
+        <input type="text" placeholder="Title" name="title" required />
+        <input type="text" placeholder="Subtitle" name="subtitle" />
+        <textarea placeholder="Excerpt" name="excerpt"></textarea>
+        <input type="url" placeholder="Cover Image URL" name="cover" />
+        <input type="url" placeholder="Wattpad Link" name="wattpad" />
+        <button type="submit">Update Book</button>
+      </form>
+    </div>
   </div>
 
   <script>
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-      document.getElementById(tab).classList.add('active');
-      document.getElementById('tab-' + tab).classList.add('active');
-    }
+    const USERNAME = "Corehodo";
+    const PASSWORD = "Write4Fun62615!";
 
-    // ADD BOOK
-    document.getElementById("addBookForm").onsubmit = async (e) => {
+    const loginForm = document.getElementById("loginForm");
+    const loginBox = document.getElementById("loginBox");
+    const dashboard = document.getElementById("dashboard");
+    const loginError = document.getElementById("loginError");
+
+    loginForm.onsubmit = (e) => {
       e.preventDefault();
-      const form = e.target;
-      const data = Object.fromEntries(new FormData(form).entries());
+      const form = new FormData(loginForm);
+      const user = form.get("username");
+      const pass = form.get("password");
 
-      const res = await fetch("/api/add-book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-
-      if (res.ok) {
-        alert("Book added");
-        form.reset();
-      } else {
-        alert("Failed to add book");
-      }
-    };
-
-    // LOAD BOOKS
-    async function loadBooks() {
-      const res = await fetch("/api/books");
-      const books = await res.json();
-      const list = document.getElementById("bookList");
-      list.innerHTML = "";
-
-      books.forEach(book => {
-        const div = document.createElement("div");
-        div.className = "book-item";
-        div.textContent = book.title + (book.subtitle ? ` (${book.subtitle})` : "");
-        div.onclick = () => loadBookForEdit(book);
-        list.appendChild(div);
-      });
-    }
-
-    function loadBookForEdit(book) {
-      const form = document.getElementById("editBookForm");
-      form.style.display = "block";
-      for (const key in book) {
-        if (form.elements[key]) {
-          form.elements[key].value = book[key];
-        }
-      }
-    }
-
-    // EDIT BOOK
-    document.getElementById("editBookForm").onsubmit = async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const data = Object.fromEntries(new FormData(form).entries());
-
-      const res = await fetch("/api/update-book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-
-      if (res.ok) {
-        alert("Book updated");
-        form.style.display = "none";
-        loadBooks();
-      } else {
-        alert("Failed to update book");
-      }
-    };
-
-    // Initial load
-    loadBooks();
-  </script>
-</body>
-</html>
+      if (user === USERNAME && pass === PASSWORD) {
+        loginBox.style.display = "none";
+        dashboard.style.display = "block";
+        document.querySelector(".tabs").style.display
