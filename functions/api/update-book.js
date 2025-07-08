@@ -1,18 +1,29 @@
 export async function onRequest(context) {
   try {
-    const data = await context.request.json();
+    const reqBody = await context.request.text();
+    console.log("Raw request body:", reqBody);
+
+    let data;
+    try {
+      data = JSON.parse(reqBody);
+    } catch (parseError) {
+      return new Response(JSON.stringify({
+        error: "Invalid JSON format",
+        details: parseError.message
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     const { id, title, subtitle, position, author, excerpt, wattpad, cover } = data;
 
-    // Basic check for missing ID
     if (!id) {
       return new Response(JSON.stringify({ error: "Missing book ID" }), { status: 400 });
     }
 
-    // Optional: Log the data for debugging (remove in production)
-    console.log("Updating book ID:", id);
-    console.log("Received data:", data);
+    console.log("Parsed update data:", data);
 
-    // Update query
     const result = await context.env.DB.prepare(`
       UPDATE books
       SET title = ?, subtitle = ?, position = ?, author = ?, excerpt = ?, wattpad = ?, cover = ?
@@ -33,6 +44,8 @@ export async function onRequest(context) {
     });
 
   } catch (e) {
+    console.error("Update error:", e);
+
     return new Response(JSON.stringify({
       error: e.message,
       stack: e.stack
