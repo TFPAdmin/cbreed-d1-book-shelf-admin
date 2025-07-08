@@ -16,7 +16,7 @@ export async function onRequest(context) {
       });
     }
 
-    const { id, title, subtitle, position, author, excerpt, wattpad, cover } = data;
+    const { id, title, subtitle, excerpt, cover, wattpad } = data;
 
     if (!id) {
       return new Response(JSON.stringify({ error: "Missing book ID" }), { status: 400 });
@@ -26,16 +26,14 @@ export async function onRequest(context) {
 
     const result = await context.env.DB.prepare(`
       UPDATE books
-      SET title = ?, subtitle = ?, position = ?, author = ?, excerpt = ?, wattpad = ?, cover = ?
+      SET title = ?, subtitle = ?, excerpt = ?, cover = ?, wattpad = ?
       WHERE id = ?
     `).bind(
       title || null,
       subtitle || null,
-      position ? Number(position) : null,
-      author || null,
       excerpt || null,
-      wattpad || null,
       cover || null,
+      wattpad || null,
       id
     ).run();
 
