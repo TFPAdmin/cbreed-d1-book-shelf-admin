@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard - Bookshelf</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f4f4f4;
+    }
+    h1 { text-align: center; }
+    form, .book-list {
+      background: white;
+      padding: 1rem;
+      margin: 1rem auto;
+      max-width: 600px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    input, textarea, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin - Bookshelf</h1>
+
+  <form id="bookForm">
+    <h2>Add Book</h2>
+    <input type="text" placeholder="Title" id="title" required />
+    <input type="text" placeholder="Subtitle" id="subtitle" />
+    <textarea placeholder="Excerpt" id="excerpt"></textarea>
+    <input type="text" placeholder="Cover Image URL" id="cover" />
+    <input type="url" placeholder="Wattpad Link" id="wattpad" />
+    <button type="submit">Add Book</button>
+  </form>
+
+  <div class="book-list">
+    <h2>Current Books</h2>
+    <ul id="books"></ul>
+  </div>
+
+  <script>
+    async function loadBooks() {
+      const res = await fetch("/api/books");
+      const books = await res.json();
+      const list = document.getElementById("books");
+      list.innerHTML = "";
+      books.forEach(book => {
+        const li = document.createElement("li");
+        li.innerHTML = `${book.title} <button onclick="deleteBook(${book.id})">Delete</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    async function deleteBook(id) {
+      await fetch("/api/delete-book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+      loadBooks();
+    }
+
+    document.getElementById("bookForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById("title").value,
+        subtitle: document.getElementById("subtitle").value,
+        excerpt: document.getElementById("excerpt").value,
+        cover: document.getElementById("cover").value,
+        wattpad: document.getElementById("wattpad").value
+      };
+      await fetch("/api/add-book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      e.target.reset();
+      loadBooks();
+    };
+
+    loadBooks();
+  </script>
+</body>
+</html>
