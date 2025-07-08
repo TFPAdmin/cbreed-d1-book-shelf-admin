@@ -8,13 +8,17 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: "Missing book ID" }), { status: 400 });
     }
 
-    // Update query with all fields
+    // Optional: Log the data for debugging (remove in production)
+    console.log("Updating book ID:", id);
+    console.log("Received data:", data);
+
+    // Update query
     const result = await context.env.DB.prepare(`
       UPDATE books
       SET title = ?, subtitle = ?, position = ?, author = ?, excerpt = ?, wattpad = ?, cover = ?
       WHERE id = ?
     `).bind(
-      title,
+      title || null,
       subtitle || null,
       position ? Number(position) : null,
       author || null,
@@ -29,11 +33,9 @@ export async function onRequest(context) {
     });
 
   } catch (e) {
-    // Log detailed error info for debugging
     return new Response(JSON.stringify({
       error: e.message,
-      stack: e.stack,
-      received: await context.request.text()
+      stack: e.stack
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
